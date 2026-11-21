@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches: [master, main]
   pull_request:
 
 concurrency:
@@ -43,6 +43,9 @@ jobs:
           environment-file: environment.yml
           cache-environment: true
           cache-environment-key: env-${{ hashFiles('environment.yml') }}
+      - name: Clear executable-stack flag on libtorch (glibc >= 2.41 refuses it)
+        shell: bash -el {0}
+        run: scripts/fix_execstack.sh
       - name: Install serving extras
         shell: bash -el {0}
         run: pip install "fastapi>=0.110" "uvicorn>=0.29" httpx

@@ -182,6 +182,7 @@ templates, and a Docker build of the SageMaker image with a smoke test on PRs an
 | PyTorch | 2.3.1 | DGL 2.3 links against libtorch 2.3; nothing newer loads. Conda-forge builds use the C++11 ABI, so the pip PyTorch wheel does *not* work with the conda DGL build. Take both from conda-forge. |
 | torchdata | ≥0.7, <0.10 | DGL 2.3 imports `torchdata.datapipes`, removed in torchdata 0.10. |
 | Python | 3.12 | Upper bound of the conda-forge DGL build. |
+| glibc ≥ 2.41 hosts | run `scripts/fix_execstack.sh` | conda-forge `libtorch_cpu.so` 2.3.1 carries an executable-stack flag that glibc 2.41+ refuses to load (`import torch` fails). The script clears the flag with patchelf; CI and the Docker image run it automatically. |
 | XGBoost / SHAP / scikit-learn | 2.1 / 0.48 / 1.9 | The native `Booster` API is used instead of the sklearn wrapper, whose `save_model` broke with scikit-learn ≥ 1.6. |
 | SageMaker Python SDK | ≥2.230, <3 | v3 (late 2025) replaced Estimator/Pipelines APIs; this repo targets v2 and the test suite pins the generated pipeline definition. |
 | AWS GraphStorm | 0.5 | Pins the same PyTorch 2.3 / DGL 2.3 pair in its SageMaker image, so this environment is GraphStorm-ready. |

@@ -24,6 +24,8 @@ RUN sed -i '/^  - pip:/,$d' environment.yml \
 
 COPY scripts ./scripts
 COPY configs ./configs
+# libtorch from conda-forge carries an executable-stack flag that newer glibc rejects; clear it.
+RUN micromamba run -n base bash scripts/fix_execstack.sh /opt/conda
 
 # sagemaker-training provides the `train` entrypoint and runs $SAGEMAKER_PROGRAM with the
 # job's hyperparameters as CLI flags; `serve` is our FastAPI server.
