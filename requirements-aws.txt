@@ -1,0 +1,5 @@
+# Client-side tooling for the SageMaker / CloudFormation scripts (run from your laptop or CI).
+# SageMaker Python SDK v3 changed the Pipelines/Estimator API; this repo targets v2.
+boto3>=1.34
+sagemaker>=2.230,<3
+cfn-lint>=1.0

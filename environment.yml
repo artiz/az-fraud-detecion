@@ -1,0 +1,33 @@
+# Reproducible environment for local work, CI and the SageMaker container.
+#
+# Why conda-forge and not pip:
+#   DGL has not published wheels on PyPI since 0.1.x, and the project's own wheel
+#   index (data.dgl.ai) stopped responding in 2026 after the dgl.ai domain lapsed.
+#   conda-forge still ships DGL 2.3.0 built against PyTorch 2.3.1 (CPU and CUDA 11.8/12.0),
+#   which is also the exact pair pinned by AWS GraphStorm's SageMaker image.
+#   Keep PyTorch at 2.3.x: DGL 2.3 links against libtorch 2.3 and loads nothing else.
+#   Keep torchdata < 0.10: DGL 2.3 imports torchdata.datapipes, removed in 0.10.
+name: graph-fraud
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.12
+  - pytorch=2.3.1
+  - pytorch-cpu            # swap for `pytorch-gpu` + `cuda-version=12` on a GPU box
+  - dgl=2.3.0
+  - torchdata>=0.7,<0.10
+  - numpy<2
+  - pandas>=2.1
+  - pyarrow
+  - scikit-learn>=1.5
+  - xgboost>=2.0,<3
+  - shap>=0.46
+  - pyyaml
+  - matplotlib-base
+  - pytest
+  - ruff
+  - boto3
+  - pip
+  - pip:
+      - -e .
