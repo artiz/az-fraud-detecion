@@ -13,8 +13,15 @@ PY="$PREFIX/bin/python"
 "$PY" -m pip install --quiet --disable-pip-version-check patchelf
 SITE="$("$PY" -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')"
 patched=0
+has_execstack() {  # minimal images (micromamba) have no binutils; fall back to the known offender
+  if command -v readelf >/dev/null 2>&1; then
+    readelf -lW "$1" 2>/dev/null | grep -q 'GNU_STACK.*RWE'
+  else
+    [[ "$(basename "$1")" == libtorch_cpu.so* ]]
+  fi
+}
 while IFS= read -r -d '' f; do
-  if readelf -lW "$f" 2>/dev/null | grep -q 'GNU_STACK.*RWE'; then
+  if has_execstack "$f"; then
     "$PREFIX/bin/patchelf" --clear-execstack "$f"
     echo "cleared executable stack: $f"
     patched=$((patched + 1))

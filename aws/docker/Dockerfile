@@ -19,7 +19,7 @@ COPY src ./src
 RUN sed -i '/^  - pip:/,$d' environment.yml \
  && micromamba install -y -n base -f environment.yml \
  && micromamba run -n base pip install --no-cache-dir --no-deps -e . \
- && micromamba run -n base pip install --no-cache-dir "sagemaker-training>=4.7" "fastapi>=0.110" "uvicorn>=0.29" \
+ && micromamba run -n base pip install --no-cache-dir "fastapi>=0.110" "uvicorn>=0.29" \
  && micromamba clean -a -y
 
 COPY scripts ./scripts
@@ -27,14 +27,15 @@ COPY configs ./configs
 # libtorch from conda-forge carries an executable-stack flag that newer glibc rejects; clear it.
 RUN micromamba run -n base bash scripts/fix_execstack.sh /opt/conda
 
-# sagemaker-training provides the `train` entrypoint and runs $SAGEMAKER_PROGRAM with the
-# job's hyperparameters as CLI flags; `serve` is our FastAPI server.
+# SageMaker starts the container as `train` or `serve`. The train entrypoint maps the
+# /opt/ml contract onto scripts/train.py (no sagemaker-training toolkit: it needs a C
+# compiler at install time); `serve` is our FastAPI server.
 ENV PATH=/opt/conda/bin:$PATH \
     PYTHONUNBUFFERED=1 \
     DGLBACKEND=pytorch \
-    SAGEMAKER_PROGRAM=scripts/train.py \
-    SAGEMAKER_SUBMIT_DIRECTORY=/opt/ml/code \
     MODEL_DIR=/opt/ml/model
-RUN printf '#!/bin/sh\nexec python /opt/ml/code/scripts/serve.py "$@"\n' > /usr/local/bin/serve && chmod +x /usr/local/bin/serve
+RUN printf '#!/bin/sh\nexec python /opt/ml/code/scripts/sm_train_entrypoint.py "$@"\n' > /usr/local/bin/train \
+ && printf '#!/bin/sh\nexec python /opt/ml/code/scripts/serve.py "$@"\n' > /usr/local/bin/serve \
+ && chmod +x /usr/local/bin/train /usr/local/bin/serve
 
 EXPOSE 8080

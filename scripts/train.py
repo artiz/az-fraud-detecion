@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Step 2: train XGBoost baseline or GraphSAGE. Runs locally and as a SageMaker training job.
 
-SageMaker contract (script mode / sagemaker-training toolkit):
+SageMaker contract (``scripts/sm_train_entrypoint.py`` maps /opt/ml onto these):
   * input channel "data" is mounted at SM_CHANNEL_DATA (the processed parquet dir),
   * the model directory SM_MODEL_DIR is tarred to S3 as model.tar.gz,
   * hyperparameters arrive as ``--model graphsage --graphsage.epochs 20`` arguments.
