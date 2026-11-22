@@ -3,7 +3,8 @@
 Graph-ML demo for anti-fraud: **GraphSAGE on DGL** vs. a **gradient-boosting baseline** on the
 Elliptic Bitcoin dataset, trained and served on **Amazon SageMaker** (training job, 4-step
 Pipeline, real-time endpoint), infrastructure in **CloudFormation**, explained with **SHAP**
-and **GNNExplainer**. CI runs the linter, the tests (with real DGL) and `cfn-lint`.
+and **GNNExplainer**, with a local graph explorer UI. CI runs the linter, the tests (with real
+DGL), the offline pipeline-definition test, `cfn-lint` and a build of the SageMaker image.
 
 [![CI](https://github.com/artiz/az-fraud-detecion/actions/workflows/ci.yml/badge.svg)](https://github.com/artiz/az-fraud-detecion/actions/workflows/ci.yml)
 
@@ -79,6 +80,7 @@ src/graph_fraud/
   inference.py, payload.py  endpoint request/response contract and k-hop payload builder
   artifacts.py              model.tar.gz layout shared by train / evaluate / serve / explain
 scripts/                    prepare_data.py · train.py · evaluate.py · explain.py · serve.py · plot_results.py
+                            sm_train_entrypoint.py (container `train` command) · fix_execstack.sh (glibc 2.41+ fix)
 ui/                         app.py (FastAPI + JSON API) · static/ (timeline + canvas graph, d3)
 aws/                        pipeline.py · run_training_job.py · invoke_endpoint.py · upload_data.py · docker/
 cloudformation/             infra.yaml (bucket, ECR, IAM, registry) · endpoint.yaml (model, config, endpoint)
@@ -112,10 +114,15 @@ Design decisions worth knowing:
 
 ```bash
 pip install fastapi uvicorn      # once; not part of the conda env
-make ui                          # http://localhost:8050
+make ui                          # http://localhost:8050  (python ui/app.py --data-dir data/processed --artifacts artifacts)
 ```
 
 ![Graph explorer](docs/ui_step35.png)
+
+Step 38 coloured by the GraphSAGE prediction instead of ground truth, with a flagged transaction
+selected (both models agree, 58 inputs, no outputs):
+
+![Graph explorer, prediction mode](docs/ui_step38_prediction.png)
 
 * **Timeline** over the 49 time steps: licit (blue) and illicit (red) counts per step, train /
   val / test shading, the dark-market shutdown marker after step 43. Click a bar, drag the
@@ -126,7 +133,8 @@ make ui                          # http://localhost:8050
   prediction of any model found under `artifacts/` (flag at the stored threshold).
 * **Node panel**: scores of every loaded model, in/out neighbours (clickable), largest features,
   and on-demand explanations: SHAP for XGBoost, GNNExplainer for GraphSAGE with the
-  influential edges listed and clickable.
+  influential edges listed and clickable. Models are optional: without `artifacts/` the UI shows
+  ground truth only.
 
 ![Node panel with GNNExplainer](docs/ui_node_explain.png)
 
@@ -199,7 +207,7 @@ python scripts/explain.py --model-dir artifacts/graphsage --data-dir data/proces
 
 CI (`.github/workflows/ci.yml`): `ruff check` + `ruff format --check`, `pytest` inside a
 micromamba environment with real DGL, the pipeline definition test with moto, `cfn-lint` on both
-templates, and a Docker build of the SageMaker image with a smoke test on PRs and `main`.
+templates, and a Docker build of the SageMaker image with a smoke test on PRs and on `master`.
 
 ## Version compatibility (checked 2026-11-21)
 

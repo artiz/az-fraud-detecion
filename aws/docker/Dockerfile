@@ -7,7 +7,7 @@
 # aarch64 PyTorch 2.3.
 #
 #   docker build -t graph-fraud -f aws/docker/Dockerfile .
-#   docker run --rm -e SM_CHANNEL_DATA=/data -v $PWD/data/processed:/data graph-fraud train --model xgboost
+#   docker run --rm -v $PWD/data/processed:/opt/ml/input/data/data -v $PWD/artifacts/docker:/opt/ml/model graph-fraud train --model xgboost
 #   docker run --rm -p 8080:8080 -v $PWD/artifacts/graphsage:/opt/ml/model graph-fraud serve
 FROM mambaorg/micromamba:2.0.5-ubuntu22.04
 

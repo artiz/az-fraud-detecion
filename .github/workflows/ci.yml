@@ -71,8 +71,8 @@ jobs:
   docker:
     name: docker build (SageMaker image)
     runs-on: ubuntu-latest
-    # The image pulls ~1.5 GB from conda-forge; build on main and PRs touching the container only.
-    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+    # The image pulls ~1.5 GB from conda-forge; build on master and on PRs only.
+    if: github.ref == 'refs/heads/master' || github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
