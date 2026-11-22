@@ -5,6 +5,8 @@ A ~40-line replacement for the sagemaker-training toolkit: it reads the SageMake
 contract from /opt/ml, turns hyperparameters into CLI flags for ``scripts/train.py`` and
 reports failures the way SageMaker expects (``/opt/ml/output/failure``). The SDK JSON-encodes
 hyperparameter values (``"graphsage"`` arrives as ``"\\"graphsage\\""``), so they are decoded.
+Any extra command-line arguments are appended, so ``docker run <image> train --model xgboost``
+works locally without a hyperparameters.json.
 
 Contract: https://docs.aws.amazon.com/sagemaker/latest/dg/your-algorithms-training-algo-running-container.html
 """
@@ -49,7 +51,8 @@ def main() -> int:
         for ch in channels.iterdir():
             env.setdefault(f"SM_CHANNEL_{ch.name.upper()}", str(ch))
     env.setdefault("SM_NUM_GPUS", env.get("SM_NUM_GPUS", "0"))
-    cmd = [sys.executable, str(CODE_DIR / "train.py"), *hyperparameters_to_args(hps)]
+    # Extra command-line arguments (``docker run <image> train --model xgboost``) win over the JSON.
+    cmd = [sys.executable, str(CODE_DIR / "train.py"), *hyperparameters_to_args(hps), *sys.argv[1:]]
     print("running:", " ".join(cmd), flush=True)
     proc = subprocess.run(cmd, env=env)
     if proc.returncode != 0:

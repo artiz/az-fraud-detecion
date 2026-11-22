@@ -56,6 +56,27 @@ def test_entrypoint_trains_from_opt_ml_layout(processed_dir, tmp_path):
     assert not (ml / "output" / "failure").exists()
 
 
+def test_entrypoint_forwards_cli_args_without_hyperparameters(processed_dir, tmp_path):
+    """`docker run <image> train --model xgboost`: no hyperparameters.json, flags come from argv."""
+    ml = tmp_path / "opt_ml"
+    (ml / "input" / "data").mkdir(parents=True)
+    (ml / "input" / "data" / "data").symlink_to(processed_dir, target_is_directory=True)
+    env = dict(os.environ, SM_ML_ROOT=str(ml))
+    cmd = [
+        sys.executable,
+        str(ENTRYPOINT),
+        "--model",
+        "xgboost",
+        "--xgboost.n_estimators",
+        "10",
+        "--xgboost.early_stopping_rounds",
+        "5",
+    ]
+    proc = subprocess.run(cmd, env=env, capture_output=True, text=True)
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    assert (ml / "model" / "model.ubj").exists()
+
+
 def test_entrypoint_reports_failure_file(tmp_path):
     ml = tmp_path / "opt_ml"
     (ml / "input" / "config").mkdir(parents=True)

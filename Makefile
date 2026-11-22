@@ -2,7 +2,7 @@
 PY ?= python
 DATA_DIR ?= data/processed
 
-.PHONY: env data baseline gnn evaluate explain serve test lint cfn-lint plot clean
+.PHONY: env data baseline gnn evaluate explain serve ui test lint cfn-lint plot clean
 
 env:
 	micromamba create -y -f environment.yml
@@ -27,6 +27,9 @@ explain:
 
 serve:
 	MODEL_DIR=artifacts/graphsage $(PY) scripts/serve.py
+
+ui:
+	$(PY) ui/app.py --data-dir $(DATA_DIR) --artifacts artifacts
 
 plot:
 	$(PY) scripts/plot_results.py --out docs/f1_per_timestep.png

@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-for p in (ROOT / "src", ROOT / "scripts", ROOT / "aws"):
+for p in (ROOT / "src", ROOT / "scripts", ROOT / "aws", ROOT / "ui"):
     sys.path.insert(0, str(p))
 
 from graph_fraud.data import NUM_FEATURES, EllipticTables, build_tables  # noqa: E402
