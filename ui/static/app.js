@@ -217,7 +217,7 @@
       const s = d.scores[m], thr = state.meta.models[m].threshold;
       return `<tr><td>${m}</td><td><div class="bar ${d.flags[m] ? "pos" : ""}" style="width:${Math.round(100 * s)}%"></div>${s.toFixed(3)} (threshold ${thr.toFixed(2)}) → ${d.flags[m] ? "flag" : "ok"}</td></tr>`;
     }).join("");
-    const nb = (ids) => ids.length ? ids.map((i) => { const n = state.nodeById.get(i); return `<span class="nb ${n ? labelName(n.label) : ""}" data-id="${i}">${i}</span>`; }).join("") : "<span class='hint'>none</span>";
+    const nb = (ids) => ids.length ? `<div class="nb-list">${ids.map((i) => { const n = state.nodeById.get(i); return `<span class="nb ${n ? labelName(n.label) : ""}" data-id="${i}">${i}</span>`; }).join(" ")}</div>` : "<span class='hint'>none</span>";
     const feats = Object.entries(d.features);
     const topFeats = feats.map(([k, v]) => [k, v]).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 12);
     panel.innerHTML = `

@@ -35,7 +35,8 @@ table.kv td { padding: 2px 4px; border-bottom: 1px solid #f0f0f0; vertical-align
 table.kv td:first-child { color: var(--muted); white-space: nowrap; }
 .bar { height: 6px; background: var(--licit); border-radius: 3px; }
 .bar.pos { background: var(--illicit); }
-.nb { cursor: pointer; color: var(--licit); text-decoration: underline dotted; margin-right: 6px; }
+.nb-list { display: flex; flex-wrap: wrap; gap: 2px 10px; max-height: 140px; overflow: auto; }
+.nb { cursor: pointer; color: var(--licit); text-decoration: underline dotted; }
 .nb.illicit { color: var(--illicit); }
 .timeline-bar { cursor: pointer; }
 .timeline-bar.selected { stroke: #000; stroke-width: 1.2; }
