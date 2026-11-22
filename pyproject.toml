@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "graph-fraud-sagemaker"
+version = "0.1.0"
+description = "Graph-ML fraud detection on the Elliptic Bitcoin dataset: GraphSAGE (DGL) vs. gradient boosting, trained and served on Amazon SageMaker, explained with SHAP and GNNExplainer."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+license = { text = "MIT" }
+# Runtime dependencies are pinned in environment.yml (conda-forge) because DGL
+# wheels are no longer published on PyPI / data.dgl.ai. This list documents the
+# Python-level API contract only; do not `pip install` DGL from here.
+dependencies = [
+  "numpy>=1.24,<2",
+  "pandas>=2.1",
+  "pyarrow>=14",
+  "scikit-learn>=1.4",
+  "xgboost>=2.0,<3",
+  "shap>=0.45",
+  "pyyaml>=6",
+]
+
+[project.optional-dependencies]
+aws = [
+  "boto3>=1.34",
+  "sagemaker>=2.230,<3",
+  "cfn-lint>=1.0",
+]
+serve = [
+  "fastapi>=0.110",
+  "uvicorn>=0.29",
+]
+dev = [
+  "pytest>=8",
+  "ruff>=0.5",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "scripts", "aws", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "W"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"
+filterwarnings = [
+  "ignore::DeprecationWarning",
+  "ignore::SyntaxWarning",
+]

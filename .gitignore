@@ -221,3 +221,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# project
+data/raw/
+data/processed/
+artifacts/
+*.parquet
+.venv/
+.ruff_cache/

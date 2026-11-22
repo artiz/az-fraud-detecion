@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  graph-fraud-sagemaker: real-time scoring endpoint. Kept in its own stack because the
+  endpoint is the only resource that bills by the hour; `aws cloudformation delete-stack`
+  on this stack removes Model, EndpointConfig and Endpoint together.
+
+Parameters:
+  InfraStackName:
+    Type: String
+    Default: graph-fraud-infra
+    Description: Name of the infra.yaml stack (role ARN is imported from it).
+  EndpointName:
+    Type: String
+    Default: graph-fraud-endpoint
+    AllowedPattern: "^[a-zA-Z0-9](-*[a-zA-Z0-9]){0,62}$"
+  ModelDataUrl:
+    Type: String
+    Description: S3 URI of model.tar.gz produced by the training job or pipeline.
+    AllowedPattern: "^s3://.+/model\\.tar\\.gz$"
+  ImageUri:
+    Type: String
+    Description: ECR image URI (with tag) of the DGL container.
+  InstanceType:
+    Type: String
+    Default: ml.m5.large
+    AllowedValues:
+      - ml.t2.medium
+      - ml.m5.large
+      - ml.m5.xlarge
+      - ml.c5.large
+      - ml.c5.xlarge
+  InitialInstanceCount:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    MaxValue: 2
+
+Resources:
+  Model:
+    Type: AWS::SageMaker::Model
+    Properties:
+      ModelName: !Sub "${EndpointName}-model-${AWS::StackName}"
+      ExecutionRoleArn:
+        Fn::ImportValue: !Sub "${InfraStackName}-SageMakerRoleArn"
+      PrimaryContainer:
+        Image: !Ref ImageUri
+        ModelDataUrl: !Ref ModelDataUrl
+        Mode: SingleModel
+        Environment:
+          MODEL_DIR: /opt/ml/model
+          DGLBACKEND: pytorch
+          SAGEMAKER_CONTAINER_LOG_LEVEL: "20"
+
+  EndpointConfig:
+    Type: AWS::SageMaker::EndpointConfig
+    Properties:
+      EndpointConfigName: !Sub "${EndpointName}-config-${AWS::StackName}"
+      ProductionVariants:
+        - VariantName: AllTraffic
+          ModelName: !GetAtt Model.ModelName
+          InitialInstanceCount: !Ref InitialInstanceCount
+          InstanceType: !Ref InstanceType
+          InitialVariantWeight: 1.0
+
+  Endpoint:
+    Type: AWS::SageMaker::Endpoint
+    Properties:
+      EndpointName: !Ref EndpointName
+      EndpointConfigName: !GetAtt EndpointConfig.EndpointConfigName
+
+Outputs:
+  EndpointName:
+    Value: !GetAtt Endpoint.EndpointName
+  EndpointArn:
+    Value: !Ref Endpoint
+  InvokeCommand:
+    Value: !Sub "python aws/invoke_endpoint.py --endpoint-name ${EndpointName} --region ${AWS::Region} --tx-id 70335036"
+  DeleteCommand:
+    Description: Run this as soon as the test call succeeded; the endpoint bills per hour.
+    Value: !Sub "aws cloudformation delete-stack --stack-name ${AWS::StackName} --region ${AWS::Region}"

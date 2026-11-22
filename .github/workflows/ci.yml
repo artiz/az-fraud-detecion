@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: ruff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "ruff>=0.5"
+      - run: ruff check .
+      - run: ruff format --check .
+
+  cloudformation:
+    name: cfn-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "cfn-lint>=1.0"
+      - run: cfn-lint cloudformation/*.yaml
+
+  test-dgl:
+    name: pytest (conda-forge DGL 2.3 / PyTorch 2.3 CPU)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: environment.yml
+          cache-environment: true
+          cache-environment-key: env-${{ hashFiles('environment.yml') }}
+      - name: Clear executable-stack flag on libtorch (glibc >= 2.41 refuses it)
+        shell: bash -el {0}
+        run: scripts/fix_execstack.sh
+      - name: Install serving extras
+        shell: bash -el {0}
+        run: pip install "fastapi>=0.110" "uvicorn>=0.29" httpx
+      - name: Run tests
+        shell: bash -el {0}
+        env:
+          DGLBACKEND: pytorch
+          OMP_NUM_THREADS: "2"
+        run: pytest --ignore=tests/test_pipeline_definition.py
+
+  test-aws-tooling:
+    name: pytest (SageMaker pipeline definition, offline via moto)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-aws.txt "moto[all]>=5" pytest pyyaml
+      - run: pytest tests/test_pipeline_definition.py
+
+  docker:
+    name: docker build (SageMaker image)
+    runs-on: ubuntu-latest
+    # The image pulls ~1.5 GB from conda-forge; build on main and PRs touching the container only.
+    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: aws/docker/Dockerfile
+          push: false
+          load: true
+          tags: graph-fraud:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke-test train entrypoint inside the image
+        run: |
+          docker run --rm graph-fraud:ci python -c "import dgl, torch, graph_fraud; print(dgl.__version__, torch.__version__)"
+          docker run --rm graph-fraud:ci python scripts/train.py --help
