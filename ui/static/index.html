@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elliptic graph explorer</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <h1>Elliptic transaction graph</h1>
+  <div class="controls">
+    <label>Colour by
+      <select id="mode">
+        <option value="label">ground truth</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="show-unknown" checked> unlabelled nodes</label>
+    <label><input type="checkbox" id="show-edges" checked> edges</label>
+    <span class="legend"><i class="sw illicit"></i>illicit <i class="sw licit"></i>licit <i class="sw unknown"></i>unknown</span>
+  </div>
+</header>
+
+<section id="timeline">
+  <svg id="timeline-svg"></svg>
+  <div class="slider-row">
+    <button id="prev" title="previous step">&#9664;</button>
+    <input type="range" id="step" min="1" max="49" value="1">
+    <button id="next" title="next step">&#9654;</button>
+    <span id="step-label"></span>
+  </div>
+</section>
+
+<main>
+  <div id="graph-wrap">
+    <canvas id="graph"></canvas>
+    <div id="tooltip" hidden></div>
+    <div id="status"></div>
+  </div>
+  <aside id="panel">
+    <p class="hint">Click a node to inspect it. Scroll to zoom, drag to pan.</p>
+    <div id="node-details" hidden></div>
+  </aside>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

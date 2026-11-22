@@ -79,6 +79,7 @@ src/graph_fraud/
   inference.py, payload.py  endpoint request/response contract and k-hop payload builder
   artifacts.py              model.tar.gz layout shared by train / evaluate / serve / explain
 scripts/                    prepare_data.py · train.py · evaluate.py · explain.py · serve.py · plot_results.py
+ui/                         app.py (FastAPI + JSON API) · static/ (timeline + canvas graph, d3)
 aws/                        pipeline.py · run_training_job.py · invoke_endpoint.py · upload_data.py · docker/
 cloudformation/             infra.yaml (bucket, ECR, IAM, registry) · endpoint.yaml (model, config, endpoint)
 tests/                      synthetic Elliptic-shaped graph; runs the full chain in ~40 s
@@ -106,6 +107,32 @@ Design decisions worth knowing:
 * **GraphSAGE forward** accepts either sampled blocks or a full graph with optional edge weights,
   so the same module trains with neighbour sampling, scores exactly on the full graph, and is
   explainable by GNNExplainer without a wrapper. `tests/test_models.py` pins sampled == full-graph.
+
+## Graph explorer UI
+
+```bash
+pip install fastapi uvicorn      # once; not part of the conda env
+make ui                          # http://localhost:8050
+```
+
+![Graph explorer](docs/ui_step35.png)
+
+* **Timeline** over the 49 time steps: licit (blue) and illicit (red) counts per step, train /
+  val / test shading, the dark-market shutdown marker after step 43. Click a bar, drag the
+  slider or use the arrow keys to switch steps.
+* **Graph of the selected step** (force layout on canvas, up to ~8k nodes): red illicit, blue
+  licit, grey unlabelled; node size follows degree. Zoom with the wheel, pan by dragging, hover
+  for the transaction id and model scores. "Colour by" switches from ground truth to the
+  prediction of any model found under `artifacts/` (flag at the stored threshold).
+* **Node panel**: scores of every loaded model, in/out neighbours (clickable), largest features,
+  and on-demand explanations: SHAP for XGBoost, GNNExplainer for GraphSAGE with the
+  influential edges listed and clickable.
+
+![Node panel with GNNExplainer](docs/ui_node_explain.png)
+
+The UI is a FastAPI app (`ui/app.py`) over the processed parquet tables; the JSON API
+(`/api/meta`, `/api/graph/{step}`, `/api/node/{tx}`, `/api/explain/{tx}?model=`) is covered by
+`tests/test_ui_api.py`. Scores for all 200k nodes are computed once at start-up (about 3 s).
 
 ## Evening 2: SageMaker and CloudFormation
 
